@@ -31,7 +31,7 @@ requirejs.config({
       "vendor/jquery"
     ],
     'kinvey': [
-      'https://da189i1jfloii.cloudfront.net/js/kinvey-backbone-1.0.4',
+      'https://da189i1jfloii.cloudfront.net/js/kinvey-backbone-1.0.5',
       'vendor/kinvey'
     ]
   }

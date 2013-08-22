@@ -192,7 +192,7 @@ Summary:
    * grunt-contrib-watch-0.4.3 [MIT] - used to enhance workflow.
    * grunt-include-bootstrap-0.1.1 [MIT] - used to building the app.
    * jquery-1.9 [MIT] - dependency of Backbone.js.
-   * kinvey-1.0.4 [Apache-2.0] - used for data persistence.
+   * kinvey-1.0.5 [Apache-2.0] - used for data persistence.
    * RequireJS-2.1 [MIT] - used for dependency management.
    * underscore.js-1.4 [MIT] - dependency of Backbone.js.
 

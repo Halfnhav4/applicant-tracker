@@ -114,7 +114,7 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
      * @type {string}
      * @default
      */
-    Kinvey.SDK_VERSION = '1.1.0';
+    Kinvey.SDK_VERSION = '1.1.1';
 
     // Properties.
     // -----------
@@ -196,9 +196,25 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
           return Kinvey.getActiveUser();
         }
 
+        // Remove callbacks from `options` to avoid multiple calls.
+        var fnSuccess = options.success;
+        var fnError = options.error;
+        delete options.success;
+        delete options.error;
+
         // Retrieve the user. The `Kinvey.User.me` method will also update the
         // active user. If `INVALID_CREDENTIALS`, reset the active user.
-        return Kinvey.User.me().then(null, function(error) {
+        return Kinvey.User.me(options).then(function(response) {
+          // Debug.
+          if(KINVEY_DEBUG) {
+            log('Restored the active user.', response);
+          }
+
+          // Restore the options and return the response.
+          options.success = fnSuccess;
+          options.error = fnError;
+          return response;
+        }, function(error) {
           // Debug.
           if(KINVEY_DEBUG) {
             log('Failed to restore the active user.', error);
@@ -208,6 +224,10 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
           if(Kinvey.Error.INVALID_CREDENTIALS === error.name) {
             Kinvey.setActiveUser(previous);
           }
+
+          // Restore the options and return the response.
+          options.success = fnSuccess;
+          options.error = fnError;
           return Kinvey.Defer.reject(error);
         });
       });
@@ -1385,7 +1405,8 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
       }
     };
 
-    /* globals angular: true, Backbone: true, Ember: true, jQuery: true, ko: true, Titanium: true */
+    /* globals angular: true, Backbone: true, Ember: true, forge: true, jQuery: true */
+    /* globals ko: true, Titanium: true */
 
     // Device information.
     // -------------------
@@ -1438,6 +1459,10 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
         }
         id = Titanium.Platform.getId();
       }
+      else if('undefined' !== typeof forge) { // Trigger.io
+        libraries.push('triggerio/' + (forge.config.platform_version || ''));
+        id = forge.config.uuid;
+      }
       else if('undefined' !== typeof process) { // Node.js
         platform = process.title;
         version = process.version;
@@ -1473,7 +1498,7 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
       }
 
       // Return the device information string.
-      var parts = ['js-backbone/1.1.0'];
+      var parts = ['js-backbone/1.1.1'];
       if(0 !== libraries.length) { // Add external library information.
         parts.push('(' + libraries.sort().join(', ') + ')');
       }
@@ -3432,7 +3457,9 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
           // does not contain `_kmd.authtoken`. Therefore, extract it from the
           // stale copy.
           user._kmd = user._kmd || {};
-          user._kmd.authtoken = Kinvey.getActiveUser()._kmd.authtoken;
+          if(null == user._kmd.authtoken) {
+            user._kmd.authtoken = Kinvey.getActiveUser()._kmd.authtoken;
+          }
 
           // Set and return the active user.
           Kinvey.setActiveUser(user);
@@ -6561,14 +6588,6 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
           log('Counting the number of documents pending synchronization.', arguments);
         }
 
-        // Validate preconditions.
-        if(!Kinvey.Sync.isOnline()) {
-          var error = clientError(Kinvey.Error.SYNC_ERROR, {
-            debug: 'Sync is not enabled, or the application resides in offline mode.'
-          });
-          return Kinvey.Defer.reject(error);
-        }
-
         // Cast arguments.
         options = options || {};
 
@@ -6992,7 +7011,7 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
        */
       objectID: function(length) {
         length = length || 24;
-        var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        var chars = 'abcdef0123456789';
         var result = '';
         for(var i = 0, j = chars.length; i < length; i += 1) {
           var pos = Math.floor(Math.random() * j);
@@ -7395,7 +7414,7 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
        */
       objectID: function(length) {
         length = length || 24;
-        var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        var chars = 'abcdef0123456789';
         var result = '';
         for(var i = 0, j = chars.length; i < length; i += 1) {
           var pos = Math.floor(Math.random() * j);
@@ -7474,7 +7493,8 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
         var request;
         if(null !== IDBAdapter.db) { // Re-open.
           var version = IDBAdapter.db.version + 1;
-          request = IDBAdapter.impl.open(IDBAdapter.db.name, version);
+          IDBAdapter.db.close(); // Required by IE10.
+          request = IDBAdapter.impl.open(IDBAdapter.dbName(), version);
         }
         else { // Open the current version.
           // Validate preconditions.
@@ -7506,8 +7526,10 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
           // upgrade operation, the `versionchange` event is fired. Then, close the
           // database to allow the external upgrade to proceed.
           IDBAdapter.db.onversionchange = function() { // Reset.
-            IDBAdapter.db.close();
-            IDBAdapter.db = null;
+            if(null !== IDBAdapter.db) {
+              IDBAdapter.db.close();
+              IDBAdapter.db = null;
+            }
           };
 
           // Try to obtain the collection handle by recursing. Append the handlers
@@ -7705,6 +7727,12 @@ module.exports=h:"undefined"!=typeof window&&(window.sift=h)})();
 
         // Prepare the response.
         var deferred = Kinvey.Defer.deferred();
+
+        // Close the database first, required by IE10.
+        if(null !== IDBAdapter.db) {
+          IDBAdapter.db.close();
+          IDBAdapter.db = null;
+        }
 
         // Delete the entire database.
         var request = IDBAdapter.impl.deleteDatabase(IDBAdapter.dbName());

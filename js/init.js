@@ -27,11 +27,11 @@ requirejs.config({
   },
   paths: {
     jquery: [
-      "http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min",
+      "http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min",
       "vendor/jquery"
     ],
     'kinvey': [
-      'https://da189i1jfloii.cloudfront.net/js/kinvey-backbone-1.1.1',
+      'https://da189i1jfloii.cloudfront.net/js/kinvey-backbone-1.1.2',
       'vendor/kinvey'
     ]
   }

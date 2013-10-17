@@ -180,7 +180,7 @@
 Summary:
 
    * backbone-1.0 [MIT] - framework for web application structure.
-   * backbone-associations-0.4 [MIT] - used for Backbone.js integration with KinveyRefs.
+   * backbone-associations-0.5 [MIT] - used for Backbone.js integration with KinveyRefs.
    * grunt-0.4.1 [MIT] - used for testing and building the app.
    * grunt-contrib-clean-0.4.1 [MIT] - used for building the app.
    * grunt-contrib-compass-0.5.2 [MIT] - used for building the app.
@@ -192,7 +192,7 @@ Summary:
    * grunt-contrib-watch-0.4.3 [MIT] - used to enhance workflow.
    * grunt-include-bootstrap-0.1.1 [MIT] - used to building the app.
    * jquery-1.9 [MIT] - dependency of Backbone.js.
-   * kinvey-1.1.1 [Apache-2.0] - used for data persistence.
+   * kinvey-1.1.2 [Apache-2.0] - used for data persistence.
    * RequireJS-2.1 [MIT] - used for dependency management.
    * underscore.js-1.4 [MIT] - dependency of Backbone.js.
 
